@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
+
+# Experiment outputs
+logs/
+full_logs/
+paper_logs/
+smoke_logs/
+*.xlsx
+*.csv
+*.pt
+*.pth
+*.ckpt
+
+# System/editor
+.DS_Store
+.vscode/
+.idea/
