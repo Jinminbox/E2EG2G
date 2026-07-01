@@ -351,6 +351,7 @@ class E2EG2G(nn.Module):
         rgm_normalize=True,
         rgm_weighted=True,
         gfe_backbone="convnet",
+        gfe_grid_size=32,
         gfe_kwargs=None,
     ):
         super().__init__()
@@ -359,6 +360,7 @@ class E2EG2G(nn.Module):
             raise ValueError("input_time is too short for the selected pooling factors.")
         self.use_lng_residual = use_lng_residual
         self.contrastive_target = contrastive_target
+        self.gfe_grid_size = gfe_grid_size
         self.latent_feature_dim = latent_nodes * feature_time
         self.grid_feature_dim = 512
         classifier_dim = self.grid_feature_dim + self.latent_feature_dim if use_lng_residual else self.grid_feature_dim
@@ -387,7 +389,15 @@ class E2EG2G(nn.Module):
     def forward(self, x):
         lng = self.lng(x) * math.sqrt(16)
         grid = self.rgm(lng)
-        grid_feature = self.gfe(grid)
+        grid_for_gfe = grid
+        if self.gfe_grid_size is not None and grid.shape[-1] != self.gfe_grid_size:
+            grid_for_gfe = F.interpolate(
+                grid,
+                size=(self.gfe_grid_size, self.gfe_grid_size),
+                mode="bilinear",
+                align_corners=False,
+            )
+        grid_feature = self.gfe(grid_for_gfe)
         lng_flat = lng.flatten(start_dim=1)
         feature = torch.cat([lng_flat, grid_feature], dim=1) if self.use_lng_residual else grid_feature
         logits = self.classifier(feature)
